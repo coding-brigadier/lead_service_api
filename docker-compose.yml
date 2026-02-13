@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: alma
+      POSTGRES_PASSWORD: alma
+      POSTGRES_DB: alma
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://alma:alma@db:5432/alma
+      SECRET_KEY: dev-secret-key
+      ATTORNEY_EMAIL: attorney@tryalma.com
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  pgdata:
