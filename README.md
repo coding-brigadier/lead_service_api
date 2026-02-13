@@ -1,4 +1,4 @@
-# Alma — Lead Management API
+Lead Service API
 
 A FastAPI application that allows prospects to submit leads (public endpoint) and attorneys to manage them via an authenticated internal API.
 
