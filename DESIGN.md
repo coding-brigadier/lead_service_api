@@ -1,5 +1,7 @@
 # Design Document — Alma Lead Management
 
+**Repository:** [https://github.com/coding-brigadier/lead_service_api](https://github.com/coding-brigadier/lead_service_api)
+
 ## Overview
 
 This application provides a lead intake pipeline for a legal services firm. Prospects submit their information and resume through a public API, and internal attorneys manage those leads through an authenticated API.
@@ -18,7 +20,7 @@ PostgreSQL is used in all environments (dev, test, staging, production). SQLAlch
 
 Internal endpoints are protected with JWT tokens issued via a login endpoint. Passwords are hashed with `bcrypt`. Tokens are signed with HS256 via `python-jose`. The login endpoint accepts a JSON body with `email` and `password` fields and returns a JWT token. Protected endpoints require the token in the `Authorization: Bearer <token>` header.
 
-This approach was chosen over session-based auth for its statelessness, making it straightforward for API consumers and horizontally scalable.
+JWT was chosen over session-based auth because it is stateless and client-agnostic — any front-end (web or mobile) can authenticate by simply storing and sending the token, with no server-side session management required. This also makes the API horizontally scalable without shared session state.
 
 ### Email: aiosmtplib with Console Fallback
 
@@ -30,7 +32,11 @@ Emails are sent as fire-and-forget background tasks so they don't block the API 
 
 Resumes are stored with UUID-based filenames to prevent collisions. File type validation restricts uploads to PDF, DOC, and DOCX.
 
-The storage backend is configurable via `STORAGE_BACKEND`: local filesystem (`uploads/` directory) for development, S3 for staging and production.
+The storage backend is configurable via `STORAGE_BACKEND`: local filesystem (`uploads/` directory) for development, S3 for staging and production. S3 is the go-to choice for file storage in production — it provides durability, scalability, and integrates naturally with AWS infrastructure. It also opens the door to features like signed URLs for secure downloads and lifecycle policies for retention management.
+
+### Configuration: `.env` with pydantic-settings
+
+All configuration is driven by environment variables loaded via `pydantic-settings` and `.env` files. This makes it straightforward to manage different environments (local, staging, production) — each environment simply uses its own `.env` or injects variables through the deployment platform (e.g. ECS task definitions, Kubernetes secrets). Sensitive values like `DATABASE_URL` and `SECRET_KEY` have no defaults and must be explicitly set, preventing accidental use of insecure fallbacks in production.
 
 ### Lead State Machine
 
